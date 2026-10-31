@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#14110d">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Strichliste">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<title>Strichliste</title>
+<style>
+  :root {
+    --bg: #14110d; --card: #211c16; --card2: #2b241c; --text: #f4ede2; --muted: #a8998a;
+    --big: #e8a317; --small: #f2c94c; --shot: #7fc8a9; --danger: #e5604d; --line: #3a3127;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; background: var(--bg); color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  body { padding: env(safe-area-inset-top) 0 calc(90px + env(safe-area-inset-bottom)); }
+  header { position: sticky; top: 0; z-index: 5; background: var(--bg);
+    padding: 12px 16px; display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid var(--line); }
+  h1 { font-size: 20px; margin: 0; letter-spacing: .3px; white-space: nowrap; }
+  .tabs { display: flex; gap: 6px; }
+  .tabs button { background: var(--card); color: var(--muted); border: 1px solid var(--line);
+    border-radius: 999px; padding: 8px 12px; font-size: 14px; }
+  .tabs button.active { color: var(--bg); background: var(--big); border-color: var(--big); font-weight: 600; }
+  main { padding: 12px 16px; max-width: 900px; margin: 0 auto; }
+  .grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+  .person { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 12px; }
+  .person-head { display: flex; justify-content: space-between; align-items: baseline; margin: 2px 4px 10px; }
+  .person-name { font-size: 18px; font-weight: 700; }
+  .person-total { color: var(--muted); font-size: 13px; }
+  .btns { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .drink { border: 0; border-radius: 12px; padding: 12px 4px 10px; min-height: 92px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+    color: #1a140c; font-weight: 700; cursor: pointer; touch-action: manipulation;
+    transition: transform .08s ease, filter .08s ease; user-select: none; -webkit-user-select: none; }
+  .drink:active { transform: scale(.94); filter: brightness(1.15); }
+  .drink.big { background: var(--big); } .drink.small { background: var(--small); } .drink.shot { background: var(--shot); }
+  .drink .ico { font-size: 22px; line-height: 1; }
+  .drink .lbl { font-size: 12px; font-weight: 600; opacity: .8; }
+  .drink .cnt { font-size: 28px; line-height: 1.05; font-variant-numeric: tabular-nums; }
+  .drink.pop .cnt { animation: pop .35s ease; }
+  @keyframes pop { 0% { transform: scale(1); } 40% { transform: scale(1.4); } 100% { transform: scale(1); } }
+
+  .undo-bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+    background: rgba(20,17,13,.96); border-top: 1px solid var(--line); display: flex; gap: 10px; align-items: center; }
+  .undo-bar .last { flex: 1; color: var(--muted); font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .undo-bar .last b { color: var(--text); }
+  .btn { background: var(--card2); color: var(--text); border: 1px solid var(--line); border-radius: 10px;
+    padding: 12px 16px; font-size: 15px; font-weight: 600; cursor: pointer; }
+  .btn:disabled { opacity: .4; }
+  .btn.danger { background: transparent; color: var(--danger); border-color: var(--danger); }
+
+  table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  th, td { padding: 10px 6px; border-bottom: 1px solid var(--line); text-align: right; }
+  th:first-child, td:first-child { text-align: left; }
+  th { color: var(--muted); font-weight: 600; font-size: 13px; }
+  tfoot td { font-weight: 700; border-bottom: 0; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 14px; margin-bottom: 12px; }
+  .card h2 { font-size: 16px; margin: 0 0 10px; }
+  .hint { color: var(--muted); font-size: 13px; margin: 6px 0 0; }
+  .names { display: grid; gap: 8px; }
+  .names input { width: 100%; background: var(--card2); color: var(--text); border: 1px solid var(--line);
+    border-radius: 10px; padding: 12px; font-size: 16px; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .log { list-style: none; padding: 0; margin: 0; max-height: 50vh; overflow: auto; }
+  .log li { display: flex; justify-content: space-between; padding: 8px 2px; border-bottom: 1px solid var(--line); font-size: 14px; }
+  .log time { color: var(--muted); font-variant-numeric: tabular-nums; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🍻 Strichliste</h1>
+  <nav class="tabs">
+    <button data-tab="track" class="active">Eintragen</button>
+    <button data-tab="stats">Übersicht</button>
+    <button data-tab="settings">⚙︎</button>
+  </nav>
+</header>
+
+<main>
+  <section id="tab-track"><div class="grid" id="grid"></div></section>
+
+  <section id="tab-stats" hidden>
+    <div class="card">
+      <h2>Rangliste</h2>
+      <table>
+        <thead><tr><th>Name</th><th>Groß</th><th>Klein</th><th>Schnaps</th><th>Liter Bier</th></tr></thead>
+        <tbody id="stats-body"></tbody>
+        <tfoot id="stats-foot"></tfoot>
+      </table>
+      <p class="hint">Liter Bier: großes Bier = 0,5 l, kleines Bier = 0,3 l.</p>
+    </div>
+    <div class="card">
+      <h2>Verlauf</h2>
+      <ul class="log" id="log"></ul>
+    </div>
+  </section>
+
+  <section id="tab-settings" hidden>
+    <div class="card">
+      <h2>Namen</h2>
+      <div class="names" id="names"></div>
+      <p class="hint">Änderungen werden sofort gespeichert.</p>
+    </div>
+    <div class="card">
+      <h2>Daten</h2>
+      <div class="row">
+        <button class="btn" id="export">Export (CSV)</button>
+        <button class="btn danger" id="reset">Alle Striche löschen</button>
+      </div>
+      <p class="hint">Alles wird nur auf diesem Gerät im Browser gespeichert. Browserdaten löschen = Striche weg.</p>
+    </div>
+  </section>
+</main>
+
+<div class="undo-bar">
+  <div class="last" id="last">Noch nichts eingetragen.</div>
+  <button class="btn" id="undo" disabled>↶ Rückgängig</button>
+</div>
+
+<script>
+(() => {
+  const KEY = 'strichliste.v1';
+  const DRINKS = {
+    big:   { label: 'Groß',    ico: '🍺', liters: 0.5 },
+    small: { label: 'Klein',   ico: '🍺', liters: 0.3 },
+    shot:  { label: 'Schnaps', ico: '🥃', liters: 0 },
+  };
+  const ORDER = ['big', 'small', 'shot'];
+
+  function defaultState() {
+    return { names: Array.from({ length: 10 }, (_, i) => 'Person ' + (i + 1)), entries: [] };
+  }
+  function load() {
+    try {
+      const s = JSON.parse(localStorage.getItem(KEY));
+      if (s && Array.isArray(s.names) && Array.isArray(s.entries)) return s;
+    } catch (e) {}
+    return defaultState();
+  }
+  let state = load();
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify(state)); }
+    catch (e) { alert('Speichern fehlgeschlagen: ' + e.message); }
+  }
+  // Ask the browser not to evict our storage
+  if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+  const counts = () => {
+    const c = state.names.map(() => ({ big: 0, small: 0, shot: 0 }));
+    for (const e of state.entries) if (c[e.p]) c[e.p][e.d]++;
+    return c;
+  };
+  const fmtTime = (t) => new Date(t).toLocaleString('de-DE', { weekday: 'short', hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' });
+
+  // ---- Eintragen ----
+  function renderGrid() {
+    const c = counts();
+    $('grid').innerHTML = state.names.map((name, p) => {
+      const total = c[p].big + c[p].small + c[p].shot;
+      return `<div class="person">
+        <div class="person-head"><span class="person-name">${esc(name)}</span>
+          <span class="person-total" id="tot-${p}">${total} gesamt</span></div>
+        <div class="btns">${ORDER.map(d => `
+          <button class="drink ${d}" data-p="${p}" data-d="${d}">
+            <span class="ico">${DRINKS[d].ico}</span>
+            <span class="cnt" id="c-${p}-${d}">${c[p][d]}</span>
+            <span class="lbl">${DRINKS[d].label}</span>
+          </button>`).join('')}</div></div>`;
+    }).join('');
+  }
+
+  function updatePerson(p) {
+    const c = counts()[p];
+    for (const d of ORDER) $(`c-${p}-${d}`).textContent = c[d];
+    $(`tot-${p}`).textContent = (c.big + c.small + c.shot) + ' gesamt';
+  }
+
+  function updateLast() {
+    const e = state.entries[state.entries.length - 1];
+    $('undo').disabled = !e;
+    $('last').innerHTML = e
+      ? `Zuletzt: <b>${esc(state.names[e.p])}</b> – ${DRINKS[e.d].label === 'Schnaps' ? 'Schnaps' : DRINKS[e.d].label + 'es Bier'}`
+      : 'Noch nichts eingetragen.';
+  }
+
+  $('grid').addEventListener('click', (ev) => {
+    const b = ev.target.closest('.drink');
+    if (!b) return;
+    const p = +b.dataset.p, d = b.dataset.d;
+    state.entries.push({ p, d, t: Date.now() });
+    save();
+    updatePerson(p);
+    updateLast();
+    b.classList.remove('pop'); void b.offsetWidth; b.classList.add('pop');
+    if (navigator.vibrate) navigator.vibrate(30);
+  });
+
+  $('undo').addEventListener('click', () => {
+    const e = state.entries.pop();
+    if (!e) return;
+    save();
+    updatePerson(e.p);
+    updateLast();
+    if (!$('tab-stats').hidden) renderStats();
+  });
+
+  // ---- Übersicht ----
+  function renderStats() {
+    const c = counts();
+    const rows = state.names.map((name, p) => ({ name, ...c[p], l: c[p].big * 0.5 + c[p].small * 0.3 }))
+      .sort((a, b) => (b.big + b.small + b.shot) - (a.big + a.small + a.shot) || b.l - a.l);
+    const lit = (x) => x.toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+    $('stats-body').innerHTML = rows.map(r =>
+      `<tr><td>${esc(r.name)}</td><td>${r.big}</td><td>${r.small}</td><td>${r.shot}</td><td>${lit(r.l)}</td></tr>`).join('');
+    const s = rows.reduce((a, r) => ({ big: a.big + r.big, small: a.small + r.small, shot: a.shot + r.shot, l: a.l + r.l }), { big: 0, small: 0, shot: 0, l: 0 });
+    $('stats-foot').innerHTML = `<tr><td>Summe</td><td>${s.big}</td><td>${s.small}</td><td>${s.shot}</td><td>${lit(s.l)}</td></tr>`;
+    $('log').innerHTML = state.entries.length
+      ? state.entries.slice().reverse().map(e =>
+          `<li><span>${esc(state.names[e.p])} · ${DRINKS[e.d].ico} ${DRINKS[e.d].label}</span><time>${fmtTime(e.t)}</time></li>`).join('')
+      : '<li><span class="hint">Noch keine Einträge.</span></li>';
+  }
+
+  // ---- Einstellungen ----
+  function renderNames() {
+    $('names').innerHTML = state.names.map((n, i) =>
+      `<input data-i="${i}" value="${esc(n)}" placeholder="Person ${i + 1}" autocomplete="off">`).join('');
+  }
+  $('names').addEventListener('input', (ev) => {
+    const i = +ev.target.dataset.i;
+    state.names[i] = ev.target.value.trim() || 'Person ' + (i + 1);
+    save();
+  });
+  $('reset').addEventListener('click', () => {
+    if (!confirm('Wirklich alle Striche löschen? (Namen bleiben erhalten)')) return;
+    state.entries = [];
+    save(); renderGrid(); updateLast();
+  });
+  $('export').addEventListener('click', () => {
+    const lines = ['Zeit;Name;Getraenk'].concat(state.entries.map(e =>
+      `${new Date(e.t).toISOString()};"${state.names[e.p].replace(/"/g, '""')}";${DRINKS[e.d].label}`));
+    const blob = new Blob(['﻿' + lines.join('\n')], { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'strichliste-' + new Date().toISOString().slice(0, 10) + '.csv';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  });
+
+  // ---- Tabs ----
+  document.querySelectorAll('.tabs button').forEach(btn => btn.addEventListener('click', () => {
+    document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('active', b === btn));
+    for (const t of ['track', 'stats', 'settings']) $('tab-' + t).hidden = t !== btn.dataset.tab;
+    if (btn.dataset.tab === 'track') renderGrid();
+    if (btn.dataset.tab === 'stats') renderStats();
+    if (btn.dataset.tab === 'settings') renderNames();
+  }));
+
+  renderGrid();
+  updateLast();
+
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+})();
+</script>
+</body>
+</html>

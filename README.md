@@ -1,11 +1,11 @@
 # 🍻 Strichliste
 
-Web-App zum Mitzählen von Getränken für mehrere Personen – großes Bier, kleines Bier, Schnaps.
+Web-App zum Mitzählen von Getränken für mehrere Personen – großes Bier, kleines Bier, Schnaps, Hubi.
 Ein Tipp auf den Knopf = ein Strich. Gespeichert wird lokal im Browser (localStorage) auf dem eigenen Gerät.
 
 ## Funktionen
-- Pro Person drei große Knöpfe (Groß / Klein / Schnaps) mit Zähler
-- „Rückgängig“-Knopf für den letzten Eintrag
+- Pro Person vier große Knöpfe (Groß / Klein / Schnaps / Hubi) mit Zähler
+- „Rückgängig“-Knopf für den letzten Eintrag, ✎-Korrekturmodus mit −-Knöpfen, Einträge im Verlauf einzeln löschbar
 - Übersicht mit Rangliste, Liter Bier und Verlauf mit Uhrzeit
 - Namen frei änderbar, CSV-Export, Zurücksetzen
 - Funktioniert auch offline und lässt sich als App zum Homescreen hinzufügen

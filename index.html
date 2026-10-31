@@ -15,7 +15,7 @@
 <style>
   :root {
     --bg: #14110d; --card: #211c16; --card2: #2b241c; --text: #f4ede2; --muted: #a8998a;
-    --big: #e8a317; --small: #f2c94c; --shot: #7fc8a9; --danger: #e5604d; --line: #3a3127;
+    --big: #e8a317; --small: #f2c94c; --shot: #7fc8a9; --hubi: #e58a6b; --danger: #e5604d; --line: #3a3127;
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body { margin: 0; background: var(--bg); color: var(--text);
@@ -29,22 +29,34 @@
   .tabs button { background: var(--card); color: var(--muted); border: 1px solid var(--line);
     border-radius: 999px; padding: 8px 12px; font-size: 14px; }
   .tabs button.active { color: var(--bg); background: var(--big); border-color: var(--big); font-weight: 600; }
+  header { gap: 8px; }
+  @media (max-width: 480px) { h1 .t { display: none; } .tabs button { padding: 8px 11px; } }
   main { padding: 12px 16px; max-width: 900px; margin: 0 auto; }
   .grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
   .person { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 12px; }
   .person-head { display: flex; justify-content: space-between; align-items: baseline; margin: 2px 4px 10px; }
   .person-name { font-size: 18px; font-weight: 700; }
   .person-total { color: var(--muted); font-size: 13px; }
-  .btns { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .btns { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .tile { display: flex; flex-direction: column; gap: 6px; }
+  .minus { display: none; border: 1px solid var(--danger); background: transparent; color: var(--danger);
+    border-radius: 10px; font-size: 22px; font-weight: 700; padding: 6px 0; cursor: pointer; touch-action: manipulation; }
+  .minus:disabled { opacity: .3; }
+  body.editing .minus { display: block; }
+  .edit-banner { display: none; background: var(--danger); color: #fff; text-align: center; padding: 8px; font-size: 14px; font-weight: 600; }
+  body.editing .edit-banner { display: block; }
+  .tabs button.edit.on { background: var(--danger); border-color: var(--danger); color: #fff; }
+  .log .del { background: transparent; border: 1px solid var(--line); color: var(--danger); border-radius: 8px; padding: 4px 10px; margin-left: 8px; font-size: 14px; cursor: pointer; }
+  .log li > span:last-child { display: flex; align-items: center; }
   .drink { border: 0; border-radius: 12px; padding: 12px 4px 10px; min-height: 92px;
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
     color: #1a140c; font-weight: 700; cursor: pointer; touch-action: manipulation;
     transition: transform .08s ease, filter .08s ease; user-select: none; -webkit-user-select: none; }
   .drink:active { transform: scale(.94); filter: brightness(1.15); }
-  .drink.big { background: var(--big); } .drink.small { background: var(--small); } .drink.shot { background: var(--shot); }
+  .drink.big { background: var(--big); } .drink.small { background: var(--small); } .drink.shot { background: var(--shot); } .drink.hubi { background: var(--hubi); }
   .drink .ico { font-size: 22px; line-height: 1; }
   .drink .lbl { font-size: 12px; font-weight: 600; opacity: .8; }
-  .drink .cnt { font-size: 28px; line-height: 1.05; font-variant-numeric: tabular-nums; }
+  .drink .cnt { font-size: 26px; line-height: 1.05; font-variant-numeric: tabular-nums; }
   .drink.pop .cnt { animation: pop .35s ease; }
   @keyframes pop { 0% { transform: scale(1); } 40% { transform: scale(1.4); } 100% { transform: scale(1); } }
 
@@ -58,7 +70,7 @@
   .btn.danger { background: transparent; color: var(--danger); border-color: var(--danger); }
 
   table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
-  th, td { padding: 10px 6px; border-bottom: 1px solid var(--line); text-align: right; }
+  th, td { padding: 10px 4px; font-size: 14px; border-bottom: 1px solid var(--line); text-align: right; }
   th:first-child, td:first-child { text-align: left; }
   th { color: var(--muted); font-weight: 600; font-size: 13px; }
   tfoot td { font-weight: 700; border-bottom: 0; }
@@ -77,14 +89,16 @@
 </head>
 <body>
 <header>
-  <h1>🍻 Strichliste</h1>
+  <h1>🍻 <span class="t">Strichliste</span></h1>
   <nav class="tabs">
     <button data-tab="track" class="active">Eintragen</button>
     <button data-tab="stats">Übersicht</button>
     <button data-tab="settings">⚙︎</button>
+    <button class="edit" id="edit" title="Korrigieren">✎</button>
   </nav>
 </header>
 
+<div class="edit-banner">Korrekturmodus: mit − einen Strich entfernen. ✎ zum Beenden.</div>
 <main>
   <section id="tab-track"><div class="grid" id="grid"></div></section>
 
@@ -92,11 +106,11 @@
     <div class="card">
       <h2>Rangliste</h2>
       <table>
-        <thead><tr><th>Name</th><th>Groß</th><th>Klein</th><th>Schnaps</th><th>Liter Bier</th></tr></thead>
+        <thead><tr><th>Name</th><th>Groß</th><th>Klein</th><th>Schnaps</th><th>Hubi</th><th>Bier (l)</th></tr></thead>
         <tbody id="stats-body"></tbody>
         <tfoot id="stats-foot"></tfoot>
       </table>
-      <p class="hint">Liter Bier: großes Bier = 0,5 l, kleines Bier = 0,3 l.</p>
+      <p class="hint">Bier (l): großes Bier = 0,5 l, kleines Bier = 0,3 l. Einzelne Einträge im Verlauf mit ✕ löschen.</p>
     </div>
     <div class="card">
       <h2>Verlauf</h2>
@@ -131,11 +145,15 @@
 (() => {
   const KEY = 'strichliste.v1';
   const DRINKS = {
-    big:   { label: 'Groß',    ico: '🍺', liters: 0.5 },
-    small: { label: 'Klein',   ico: '🍺', liters: 0.3 },
+    big:   { label: 'Groß',    full: 'Großes Bier',  ico: '🍺', liters: 0.5 },
+    small: { label: 'Klein',   full: 'Kleines Bier', ico: '🍺', liters: 0.3 },
     shot:  { label: 'Schnaps', ico: '🥃', liters: 0 },
+    hubi:  { label: 'Hubi',    ico: '🦌', liters: 0 },
   };
-  const ORDER = ['big', 'small', 'shot'];
+  const ORDER = ['big', 'small', 'shot', 'hubi'];
+  const full = (d) => DRINKS[d].full || DRINKS[d].label;
+  const emptyCount = () => Object.fromEntries(ORDER.map(d => [d, 0]));
+  const sum = (c) => ORDER.reduce((a, d) => a + c[d], 0);
   const DEFAULT_NAMES = ['Jules', 'Johannes', 'Esau', 'Nane', 'Lea', 'Rudi', 'Niklas', 'Gerrit', 'Maylin'];
 
   function defaultState() {
@@ -166,8 +184,8 @@
   const $ = (id) => document.getElementById(id);
   const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
   const counts = () => {
-    const c = state.names.map(() => ({ big: 0, small: 0, shot: 0 }));
-    for (const e of state.entries) if (c[e.p]) c[e.p][e.d]++;
+    const c = state.names.map(emptyCount);
+    for (const e of state.entries) if (c[e.p] && e.d in c[e.p]) c[e.p][e.d]++;
     return c;
   };
   const fmtTime = (t) => new Date(t).toLocaleString('de-DE', { weekday: 'short', hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' });
@@ -176,34 +194,44 @@
   function renderGrid() {
     const c = counts();
     $('grid').innerHTML = state.names.map((name, p) => {
-      const total = c[p].big + c[p].small + c[p].shot;
+      const total = sum(c[p]);
       return `<div class="person">
         <div class="person-head"><span class="person-name">${esc(name)}</span>
           <span class="person-total" id="tot-${p}">${total} gesamt</span></div>
         <div class="btns">${ORDER.map(d => `
-          <button class="drink ${d}" data-p="${p}" data-d="${d}">
+          <div class="tile"><button class="drink ${d}" data-p="${p}" data-d="${d}">
             <span class="ico">${DRINKS[d].ico}</span>
             <span class="cnt" id="c-${p}-${d}">${c[p][d]}</span>
             <span class="lbl">${DRINKS[d].label}</span>
-          </button>`).join('')}</div></div>`;
+          </button><button class="minus" data-p="${p}" data-d="${d}" id="m-${p}-${d}" ${c[p][d] ? '' : 'disabled'}>−</button></div>`).join('')}</div></div>`;
     }).join('');
   }
 
   function updatePerson(p) {
     const c = counts()[p];
-    for (const d of ORDER) $(`c-${p}-${d}`).textContent = c[d];
-    $(`tot-${p}`).textContent = (c.big + c.small + c.shot) + ' gesamt';
+    for (const d of ORDER) { $(`c-${p}-${d}`).textContent = c[d]; $(`m-${p}-${d}`).disabled = !c[d]; }
+    $(`tot-${p}`).textContent = sum(c) + ' gesamt';
   }
 
   function updateLast() {
     const e = state.entries[state.entries.length - 1];
     $('undo').disabled = !e;
     $('last').innerHTML = e
-      ? `Zuletzt: <b>${esc(state.names[e.p])}</b> – ${DRINKS[e.d].label === 'Schnaps' ? 'Schnaps' : DRINKS[e.d].label + 'es Bier'}`
+      ? `Zuletzt: <b>${esc(state.names[e.p])}</b> – ${full(e.d)}`
       : 'Noch nichts eingetragen.';
   }
 
   $('grid').addEventListener('click', (ev) => {
+    const m = ev.target.closest('.minus');
+    if (m) {
+      const p = +m.dataset.p, d = m.dataset.d;
+      for (let i = state.entries.length - 1; i >= 0; i--) {
+        const e = state.entries[i];
+        if (e.p === p && e.d === d) { state.entries.splice(i, 1); break; }
+      }
+      save(); updatePerson(p); updateLast();
+      return;
+    }
     const b = ev.target.closest('.drink');
     if (!b) return;
     const p = +b.dataset.p, d = b.dataset.d;
@@ -224,19 +252,34 @@
     if (!$('tab-stats').hidden) renderStats();
   });
 
+  $('edit').addEventListener('click', () => {
+    const on = document.body.classList.toggle('editing');
+    $('edit').classList.toggle('on', on);
+    if (on) showTab('track');
+  });
+
+  $('log').addEventListener('click', (ev) => {
+    const b = ev.target.closest('.del');
+    if (!b) return;
+    const i = +b.dataset.i, e = state.entries[i];
+    if (!e || !confirm(`Eintrag löschen: ${state.names[e.p]} – ${full(e.d)}?`)) return;
+    state.entries.splice(i, 1);
+    save(); renderStats(); updateLast();
+  });
+
   // ---- Übersicht ----
   function renderStats() {
     const c = counts();
     const rows = state.names.map((name, p) => ({ name, ...c[p], l: c[p].big * 0.5 + c[p].small * 0.3 }))
-      .sort((a, b) => (b.big + b.small + b.shot) - (a.big + a.small + a.shot) || b.l - a.l);
+      .sort((a, b) => sum(b) - sum(a) || b.l - a.l);
     const lit = (x) => x.toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
     $('stats-body').innerHTML = rows.map(r =>
-      `<tr><td>${esc(r.name)}</td><td>${r.big}</td><td>${r.small}</td><td>${r.shot}</td><td>${lit(r.l)}</td></tr>`).join('');
-    const s = rows.reduce((a, r) => ({ big: a.big + r.big, small: a.small + r.small, shot: a.shot + r.shot, l: a.l + r.l }), { big: 0, small: 0, shot: 0, l: 0 });
-    $('stats-foot').innerHTML = `<tr><td>Summe</td><td>${s.big}</td><td>${s.small}</td><td>${s.shot}</td><td>${lit(s.l)}</td></tr>`;
+      `<tr><td>${esc(r.name)}</td>${ORDER.map(d => `<td>${r[d]}</td>`).join('')}<td>${lit(r.l)}</td></tr>`).join('');
+    const s = rows.reduce((a, r) => { ORDER.forEach(d => a[d] += r[d]); a.l += r.l; return a; }, { ...emptyCount(), l: 0 });
+    $('stats-foot').innerHTML = `<tr><td>Summe</td>${ORDER.map(d => `<td>${s[d]}</td>`).join('')}<td>${lit(s.l)}</td></tr>`;
     $('log').innerHTML = state.entries.length
-      ? state.entries.slice().reverse().map(e =>
-          `<li><span>${esc(state.names[e.p])} · ${DRINKS[e.d].ico} ${DRINKS[e.d].label}</span><time>${fmtTime(e.t)}</time></li>`).join('')
+      ? state.entries.map((e, i) => ({ e, i })).reverse().map(({ e, i }) =>
+          `<li><span>${esc(state.names[e.p] || '?')} · ${DRINKS[e.d] ? DRINKS[e.d].ico + ' ' + full(e.d) : e.d}</span><span><time>${fmtTime(e.t)}</time><button class="del" data-i="${i}" aria-label="Löschen">✕</button></span></li>`).join('')
       : '<li><span class="hint">Noch keine Einträge.</span></li>';
   }
 
@@ -273,13 +316,14 @@
   });
 
   // ---- Tabs ----
-  document.querySelectorAll('.tabs button').forEach(btn => btn.addEventListener('click', () => {
-    document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('active', b === btn));
-    for (const t of ['track', 'stats', 'settings']) $('tab-' + t).hidden = t !== btn.dataset.tab;
-    if (btn.dataset.tab === 'track') renderGrid();
-    if (btn.dataset.tab === 'stats') renderStats();
-    if (btn.dataset.tab === 'settings') renderNames();
-  }));
+  function showTab(tab) {
+    document.querySelectorAll('.tabs button[data-tab]').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+    for (const t of ['track', 'stats', 'settings']) $('tab-' + t).hidden = t !== tab;
+    if (tab === 'track') renderGrid();
+    if (tab === 'stats') renderStats();
+    if (tab === 'settings') renderNames();
+  }
+  document.querySelectorAll('.tabs button[data-tab]').forEach(btn => btn.addEventListener('click', () => showTab(btn.dataset.tab)));
 
   renderGrid();
   updateLast();

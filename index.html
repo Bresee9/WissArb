@@ -108,6 +108,7 @@
     <div class="card">
       <h2>Namen</h2>
       <div class="names" id="names"></div>
+      <div class="row" style="margin-top:8px"><button class="btn" id="add">+ Person hinzufügen</button></div>
       <p class="hint">Änderungen werden sofort gespeichert.</p>
     </div>
     <div class="card">
@@ -135,14 +136,22 @@
     shot:  { label: 'Schnaps', ico: '🥃', liters: 0 },
   };
   const ORDER = ['big', 'small', 'shot'];
+  const DEFAULT_NAMES = ['Jules', 'Johannes', 'Esau', 'Nane', 'Lea', 'Rudi', 'Niklas', 'Gerrit', 'Maylin'];
 
   function defaultState() {
-    return { names: Array.from({ length: 10 }, (_, i) => 'Person ' + (i + 1)), entries: [] };
+    return { names: DEFAULT_NAMES.slice(), entries: [] };
   }
   function load() {
     try {
       const s = JSON.parse(localStorage.getItem(KEY));
-      if (s && Array.isArray(s.names) && Array.isArray(s.entries)) return s;
+      if (s && Array.isArray(s.names) && Array.isArray(s.entries)) {
+        // Alte Platzhalter-Namen ("Person 1" ...) durch die echten Namen ersetzen
+        if (s.names.every((n, i) => n === 'Person ' + (i + 1))) {
+          s.names = DEFAULT_NAMES.slice();
+          s.entries = s.entries.filter(e => e.p < s.names.length);
+        }
+        return s;
+      }
     } catch (e) {}
     return defaultState();
   }
@@ -240,6 +249,12 @@
     const i = +ev.target.dataset.i;
     state.names[i] = ev.target.value.trim() || 'Person ' + (i + 1);
     save();
+  });
+  $('add').addEventListener('click', () => {
+    state.names.push('Person ' + (state.names.length + 1));
+    save(); renderNames();
+    const inputs = $('names').querySelectorAll('input');
+    inputs[inputs.length - 1].select();
   });
   $('reset').addEventListener('click', () => {
     if (!confirm('Wirklich alle Striche löschen? (Namen bleiben erhalten)')) return;
